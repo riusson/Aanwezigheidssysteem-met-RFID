@@ -14,13 +14,18 @@ from Tkinter import IntVar
 import tkMessageBox as mBox
 import time
 import RPi.GPIO as GPIO
-import SimpleMFRC522
+"""new classes for reading tags"""
+import SimpleMFRC522_monitor
+import SimpleMFRC522_normal
 import datetime
 import spi
-#from MFRC522 import SimpleMFRC522
-
-
 import pymysql
+
+"""new instances since last commit"""
+#monitorInstance returns 0 if no tag found, only checks once
+monitorInstance = SimpleMFRC522_monitor.SimpleMFRC522_monitor()
+#normalReadInstance checks for tag until one is scanned
+normalReadInstance = SimpleMFRC522_normal.SimpleMFRC522_normal()
 
 #dictonary to hold database connection info
 dbConfig = {
@@ -29,9 +34,10 @@ dbConfig = {
     'host':'127.0.0.1',
     'database': 'project'
     }
-
-#stop var for stopping monitor
+"""new global var for monitor"""
+#global vars for monitoring
 stopMonitor = False
+reader = 1
 
 class GUI:
     def __init__(self, master):
@@ -128,15 +134,14 @@ class GUI:
         
     def checkReaders(self):
         global stopMonitor
-        reader = 1
-        id = 0
+        global reader
         if stopMonitor != True:
             if reader == 1:
                 spi.openSPI(device='/dev/spidev0.0',speed=1000000)
             elif reader == -1:
                 spi.openSPI(device='/dev/spidev0.1',speed=1000000)
             try:
-                id, text = reader.read()
+                id, text = monitorInstance.read()
                 print(id)
                 print(text)
             finally:
@@ -146,8 +151,6 @@ class GUI:
                     gui.after(2000, self.checkReaders)
                 else:
                     stopMonitor = True
-                    
-                
         now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         if stopMonitor == True:
             self.checkPerson(id, now, reader)
