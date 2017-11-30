@@ -12,14 +12,21 @@ import ttk
 from Tkinter import StringVar
 from Tkinter import IntVar
 import tkMessageBox as mBox
-import time
+
+#imports for tag readers
 import RPi.GPIO as GPIO
+import spi
 """new classes for reading tags"""
 import SimpleMFRC522_monitor
 import SimpleMFRC522_normal
-import datetime
-import spi
+
 import pymysql
+
+#imports for logging
+import os
+import datetime
+
+
 
 """new instances since last commit"""
 #monitorInstance returns 0 if no tag found, only checks once
@@ -164,9 +171,11 @@ class GUI:
             if reader == 1:
                 self.pEntry.delete(tk.INSERT)
                 self.pEntry.insert(tk.INSERT, "Reader 1")
+                ingang = 1
             else:
                 self.pEntry.delete(tk.INSERT)
                 self.pEntry.insert(tk.INSERT, "Reader 2")
+                ingang = 2
                 
             for response in cursor:
                 self.imgPerson = tk.PhotoImage(file="mk.gif")
@@ -175,9 +184,11 @@ class GUI:
                 if id == response[0]:
                     self.imgResponse = tk.PhotoImage(file="ok.gif")
                     self.imgResLabel.configure(image=self.imgResponse)
+                    granted = "approved."
                 else:
                     self.imgResponse = tk.PhotoImage(file="error.gif")
                     self.imgResLabel.configure(image=self.imgResponse)
+                    granted = "denied."
                 
                 
         except pymysql.MySQLError as e:
@@ -185,6 +196,10 @@ class GUI:
         finally:
             cursor.close()
             connection.close()
+            #opening logfile
+            logfile = open("./log.txt", "a")
+            logfile.write(tijd + " " + response[2] + " " + response[1] + "entered via entry: " + ingang + ", entry was " + granted + "\n")
+            logfile.close()
             
     def create_person_fields(self):
         #borderwidth = distance between border and elements
