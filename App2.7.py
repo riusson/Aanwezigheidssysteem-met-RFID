@@ -1,10 +1,3 @@
-"""
-    TO DO:
-        - treeview selected item
-        - onclick delete button, edit button
-        - user login to access edit,add,delete user from database (stackoverflow)
-
-"""
 
 #import libraries and modules
 import Tkinter as tk
@@ -165,9 +158,12 @@ class GUI:
     def checkPerson(self,id, tijd, reader):
         connection = pymysql.connect(**dbConfig)
         cursor = connection.cursor()
-
+        ingang=0
+        naam=""
+        voornaam=""
+        granted = ""
         try:
-            cursor.execute("Select * FROM test where ID = "+id)
+            cursor.execute("Select * FROM Personen where ID = %s",(id))
             if reader == 1:
                 self.pEntry.delete(tk.INSERT)
                 self.pEntry.insert(tk.INSERT, "Reader 1")
@@ -178,11 +174,13 @@ class GUI:
                 ingang = 2
                 
             for response in cursor:
-                self.imgPerson = tk.PhotoImage(file="mk.gif")
+                voornaam = response[1]
+                naam = response[2]
+                self.imgPerson = tk.PhotoImage(file=response[3])
                 self.imgLabel.configure(image=self.imgPerson)
-                self.pName.insert(tk.INSERT, response[2]+" "+response[1])
+                self.pName.insert(tk.INSERT, response[1]+" "+response[2])
                 if id == response[0]:
-                    self.imgResponse = tk.PhotoImage(file="ok.gif")
+                    self.imgResponse = tk.PhotoImage(file="right.gif")
                     self.imgResLabel.configure(image=self.imgResponse)
                     granted = "approved."
                 else:
@@ -198,7 +196,8 @@ class GUI:
             connection.close()
             #opening logfile
             logfile = open("./log.txt", "a")
-            logfile.write(tijd + " " + response[2] + " " + response[1] + "entered via entry: " + ingang + ", entry was " + granted + "\n")
+            string = tijd
+            logfile.write(tijd + " " + voornaam + " " + naam + " entered via entry: " + str(ingang) + ", entry was " + granted + "\n")
             logfile.close()
             
     def create_person_fields(self):
@@ -233,7 +232,7 @@ class GUI:
         self.toegang.grid(row=6,column=1,pady=2)
       
         
-        self.btn_read_tag = ttk.Button(self.frame_pinfo,text="Read tagnumber",width=25)
+        self.btn_read_tag = ttk.Button(self.frame_pinfo,text="Read tagnumber",width=25,command=self.readtag)
         self.btn_read_tag.grid(row=7,column=1,padx=1,pady=10)
         self.btn_addToDatabase = ttk.Button(self.frame_pinfo,text="Add to database",width=25,command=self.insertDb)
         self.btn_addToDatabase.grid(row=8,column=1,padx=1,pady=1)
@@ -259,35 +258,70 @@ class GUI:
         self.imgResLabel.grid(row=0,column=0,padx=10,pady=2)
         
     def editUser(self):
-        new = tk.Toplevel()
-
-        frame_new = ttk.Frame(new,width=200,height=300,relief="ridge",borderwidth=20)
-        frame_new.grid(row=0,column=0,padx=20,pady=20)
-
-        tagLabel = ttk.Label(frame_new, text="Tag number:",width=15).grid(row=0,column=0)
-        tagnummer = ttk.Entry(frame_new,width=20)
-        tagnummer.grid(row=0,column=1,pady=2)
+        self.new = tk.Toplevel(self.master)
         
-        vLabel = ttk.Label(frame_new, text="First name:",width=15).grid(row=1,column=0)
-        vnaam = ttk.Entry(frame_new,width=20)
-        vnaam.grid(row=1,column=1,pady=2)
-        
-        aLabel = ttk.Label(frame_new, text="Last Name:",width=15).grid(row=2,column=0)
-        anaam = ttk.Entry(frame_new,width=20)
-        anaam.grid(row=2,column=1,pady=2)
 
-        lphoto = ttk.Label(frame_new,text="Image:",width=15).grid(row=3,column=0)
-        photo = ttk.Entry(frame_new,width=20)
-        photo.grid(row=3,column=1,pady=2)
+        self.new.fnew = ttk.Frame(self.new,width=200,height=300,relief="ridge",borderwidth=20)
+        self.new.fnew.grid(row=0,column=0,padx=20,pady=20)
+
+        self.new.tagLabel = ttk.Label(self.new.fnew, text="Tag number:",width=15).grid(row=0,column=0)
+        self.new.tagnummer = ttk.Entry(self.new.fnew,width=20)
+        self.new.tagnummer.grid(row=0,column=1,pady=2)
+        
+        self.new.vLabel = ttk.Label(self.new.fnew, text="First name:",width=15).grid(row=1,column=0)
+        self.new.vnaam = ttk.Entry(self.new.fnew,width=20)
+        self.new.vnaam.grid(row=1,column=1,pady=2)
+        
+        self.new.aLabel = ttk.Label(self.new.fnew, text="Last Name:",width=15).grid(row=2,column=0)
+        self.new.anaam = ttk.Entry(self.new.fnew,width=20)
+        self.new.anaam.grid(row=2,column=1,pady=2)
+
+        self.new.lphoto = ttk.Label(self.new.fnew,text="Image:",width=15).grid(row=3,column=0)
+        self.new.photo = ttk.Entry(self.new.fnew,width=20)
+        self.new.photo.grid(row=3,column=1,pady=2)
+
+        self.new.Lntag = ttk.Label(self.new.fnew, text="New tagnumber:",width=15).grid(row=4,column=0)
+        self.new.nTag = ttk.Entry(self.new.fnew,width=20)
+        self.new.nTag.grid(row=4,column=1,pady=2)
+        
+        self.new.tagBtn = ttk.Button(self.new.fnew,text="Read new tag",width=25,command=self.readNtag)
+        self.new.tagBtn.grid(row=5,column=1,pady=2)
+
+        self.new.saveBtn = ttk.Button(self.new.fnew,text="Save",width=25,command=self.saveEdit)
+        self.new.saveBtn.grid(row=6,column=1,pady=2)
 
         item = self.tree.selection()[0]
         item_text = self.tree.item(item,"values")
 
-        tagnummer.insert(0,item_text[0])
-        vnaam.insert(0,item_text[1])
-        anaam.insert(0,item_text[2])
-        photo.insert(0,item_text[3])
-        new.mainloop()
+        self.new.tagnummer.insert(0,item_text[0])
+        self.new.vnaam.insert(0,item_text[1])
+        self.new.anaam.insert(0,item_text[2])
+        self.new.photo.insert(0,item_text[3])
+        self.new.mainloop()
+    def saveEdit(self):
+        answer = mBox.askyesno("Add new user", "Are you want to add this user?")
+
+        voornaam = self.new.vnaam.get()
+        achternaam = self.new.anaam.get()
+        tagnummer = self.new.tagnummer.get()
+        image = self.new.photo.get()
+        nTag = self.new.nTag.get()
+        
+        connection = pymysql.connect(**dbConfig)
+        cursor = connection.cursor()
+
+        if answer:
+            try:
+                cursor.execute("""UPDATE Personen SET id=%s,firstname=%s,lastname=%s,photo=%s where id=%s""",(nTag,voornaam,achternaam,image,tagnummer))
+                connection.commit()
+            except pymysql.MySQLError as e:
+                connection.rollback()
+                print("Got error {!r}, errno is {}".format(e,e.args[0]))
+            
+            finally:
+                cursor.close()
+                connection.close()
+                self.new.destroy()
 
     def refresh(self):
         self.tree.delete(*self.tree.get_children())
@@ -296,9 +330,9 @@ class GUI:
         cursor = connection.cursor()
 
         try:
-            cursor.execute("Select * FROM test")
+            cursor.execute("Select * FROM Personen")
             for response in cursor:
-                self.tree.insert('','end',values=(response[0],response[1],response[2]))
+                self.tree.insert('','end',values=(response[0],response[2],response[1],response[3],response[6]))
                 
         except pymysql.MySQLError as e:
             print("Got error {!r}, errno is {}".format(e,e.args[0]))
@@ -308,36 +342,42 @@ class GUI:
 
     def insertDb(self):
         #let user confirm
-        answer = mBox.askyesno("Add new user", "Are you want to add this user?")
+        answer = mBox.askyesno("Add new user", "Are you sure you want to add this user?")
          
         if answer:
             voornaam = self.vnaam.get()
             achternaam = self.anaam.get()
             tagnummer = self.tagnummer.get()
             image = self.image.get()
+            functie = self.functie.get()
+            toegang = self.toegang.get()
             
             connection = pymysql.connect(**dbConfig)
             cursor = connection.cursor()
                 
             try:
-                query = "INSERT INTO `test`(`naam`,`voornaam`) VALUES(%s,%s)"
-                cursor.execute(query,(achternaam,voornaam))
+                query = """INSERT INTO Personen (id,firstname,lastname,photo,functionType,access,state) VALUES(%s,%s,%s,%s,%s,%s,%s)"""
+                cursor.execute(query,(tagnummer,voornaam,achternaam,image,functie,toegang,1))
                 connection.commit()
-
             except pymysql.MySQLError as e:
+                connection.rollback()
                 print("Got error {!r}, errno is {}".format(e,e.args[0]))    
             
             finally:
                 cursor.close()
                 connection.close()
+                #clear entries
+                self.vnaam.delete(0,'end')
+                self.anaam.delete(0,'end')
+                self.tagnummer.delete(0,'end')
+                self.image.delete(0,'end')
+                self.functie.delete(0,'end')
+                self.toegang.delete(0,'end')
+                
 
-            #clear entries
-            self.vnaam.delete(0,'end')
-            self.anaam.delete(0,'end')
-            self.tagnummer.delete(0,'end')
             
     def deleteUser(self):
-        answer = mBox.askyesno("Delete user", "Are you user want to delete this user?")
+        answer = mBox.askyesno("Delete user", "Are you sure you want to delete this user?")
         if answer:         
             connection = pymysql.connect(**dbConfig)
             cursor = connection.cursor()
@@ -358,18 +398,23 @@ class GUI:
                     print("User could not be deleted")
                 connection.commit()
             except pymysql.MySQLError as e:
+                connection.rollback()
                 print("Got error {!r}, errno is {}".format(e,e.args[0]))
                 
             finally:
                     self.tree.delete(item)
                     cursor.close()
                     connection.close()
-    #def readtag(self):
+    def readtag(self):
+        id,text = normalReadInstance.read()
+        self.tagnummer.insert(0,id)
+    def readNtag(self):
+        id,text = normalReadInstance.read()
+        self.new.nTag.insert(0,id)
         
             
         
 gui = tk.Tk()
-gui.geometry("600x450")
 my_gui = GUI(gui)
 gui.mainloop()
 
