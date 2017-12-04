@@ -188,7 +188,7 @@ class GUI:
                 self.imgPerson = tk.PhotoImage(file=response[3])
                 self.imgLabel.configure(image=self.imgPerson)
                 self.pName.insert(tk.INSERT, response[1]+" "+response[2])
-                if id == response[0]:
+                if id == response[0] and response[5] == ingang:
                     self.imgResponse = tk.PhotoImage(file="right.gif")
                     self.imgResLabel.configure(image=self.imgResponse)
                     granted = "approved."
