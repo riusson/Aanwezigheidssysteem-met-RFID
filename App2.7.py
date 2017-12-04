@@ -120,13 +120,18 @@ class GUI:
         self.frameResponse.grid(row=2,pady=2)
     
         #button to start monitor
-        self.startBtn = ttk.Button(self.tab3,text="Start monitor",command=self.checkReaders,width=25)
+        self.startBtn = ttk.Button(self.tab3,text="Start monitor",command=self.startMonitor,width=25)
         self.startBtn.grid(row=3,column=0)
         #button to stop monitor
         self.stopBtn = ttk.Button(self.tab3,text="Stop monitor",command=self.stopMonitor,width=25)
         self.stopBtn.grid(row=3,column=1)
         #monitor who enters
         self.monitor()
+        
+    def startMonitor(self):
+        global stopMonitor
+        stopMonitor = False
+        self.checkReaders()
         
     def stopMonitor(self):
         global stopMonitor
@@ -150,10 +155,12 @@ class GUI:
                     reader = reader*-1
                     gui.after(2000, self.checkReaders)
                 else:
-                    stopMonitor = True
+                    stopMonitorForCheck = True
         now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        if stopMonitor == True:
+        if stopMonitorForCheck == True:
             self.checkPerson(id, now, reader)
+            stopMonitorForCheck = False
+            gui.after(2000, self.checkReaders)
         
     def checkPerson(self,id, tijd, reader):
         connection = pymysql.connect(**dbConfig)
@@ -199,6 +206,7 @@ class GUI:
             string = tijd
             logfile.write(tijd + " " + voornaam + " " + naam + " entered via entry: " + str(ingang) + ", entry was " + granted + "\n")
             logfile.close()
+            
             
     def create_person_fields(self):
         #borderwidth = distance between border and elements
