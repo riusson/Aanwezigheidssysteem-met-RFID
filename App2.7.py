@@ -168,6 +168,7 @@ class GUI:
         connection = pymysql.connect(**dbConfig)
         cursor = connection.cursor()
         ingang=0
+        functiePersoon=0
         naam=""
         voornaam=""
         granted = ""
@@ -202,7 +203,7 @@ class GUI:
                     #komt binnen
                     action = "entered"
                     try:
-                        cursor.execute("""UPDATE Personen SET aanwezig=%d where id=%s""",(1,id))
+                        cursor.execute("""UPDATE Personen SET aanwezig=%s where id=%s""",(1,id))
                         connection.commit()
                     except pymysql.MySQLError as e:
                         connection.rollback()
@@ -212,7 +213,7 @@ class GUI:
                     #gaat weg
                     action = "left"
                     try:
-                        cursor.execute("""UPDATE Personen SET aanwezig=%d where id=%s""",(0,id))
+                        cursor.execute("""UPDATE Personen SET aanwezig=%s where id=%s""",(0,id))
                         connection.commit()
                     except pymysql.MySQLError as e:
                         connection.rollback()
@@ -226,7 +227,7 @@ class GUI:
             connection.close()
             #opening logfile
             logfile = open("./log.txt", "a")
-            logfile.write(tijd + " " + voornaam + " " + naam + ", " + functiePersoon + ", " + action + " via entry: " + str(ingang) + ", entry was " + granted + "\n")
+            logfile.write(tijd + " " + voornaam + " " + naam + ", " + str(functiePersoon) + ", " + action + " via entry: " + str(ingang) + ", entry was " + granted + "\n")
             logfile.close()
             
             
@@ -290,7 +291,8 @@ class GUI:
     def editUser(self):
         self.new = tk.Toplevel(self.master)
         
-
+        self.vAccess = tk.IntVar()
+        self.vState = tk.IntVar()
         self.new.fnew = ttk.Frame(self.new,width=200,height=300,relief="ridge",borderwidth=20)
         self.new.fnew.grid(row=0,column=0,padx=20,pady=20)
 
@@ -313,12 +315,32 @@ class GUI:
         self.new.Lntag = ttk.Label(self.new.fnew, text="New tagnumber:",width=15).grid(row=4,column=0)
         self.new.nTag = ttk.Entry(self.new.fnew,width=20)
         self.new.nTag.grid(row=4,column=1,pady=2)
+
+        #radio buttons
+        self.new.frameAccess = ttk.Frame(self.new.fnew)
+        self.new.frameAccess.grid(row=5,column=1)
+        self.new.accessLb = ttk.Label(self.new.fnew ,text="Access:",width=15).grid(row=5,column=0) 
+        self.new.accessRb1 = ttk.Radiobutton(self.new.frameAccess,text="Ingang 1",value=1,variable=self.vAccess)
+        self.new.accessRb1.grid(row=0,column=1,padx=2)
+        self.new.accessRb2 = ttk.Radiobutton( self.new.frameAccess ,text="Ingang2",value=2,variable=self.vAccess)
+        self.new.accessRb2.grid(row=0,column=2,padx=2)
+        self.new.accessRb3 = ttk.Radiobutton( self.new.frameAccess ,text="Beide",value=3,variable=self.vAccess)
+        self.new.accessRb3.grid(row=0,column=3,padx=2)
+
+        self.new.frameState = ttk.Frame(self.new.fnew)
+        self.new.frameState.grid(row=6,column=1)
+        self.new.stateLb = ttk.Label(self.new.fnew ,text="State:",width=15).grid(row=6,column=0) 
+        self.new.stateRb1 = ttk.Radiobutton(self.new.frameState,text="On",value=0,variable=self.vState)
+        self.new.stateRb1.grid(row=0,column=1,padx=7)
+        self.new.stateRb2 = ttk.Radiobutton( self.new.frameState ,text="Off",value=1,variable=self.vState)
+        self.new.stateRb2.grid(row=0,column=2,padx=7)
+        
         
         self.new.tagBtn = ttk.Button(self.new.fnew,text="Read new tag",width=25,command=self.readNtag)
-        self.new.tagBtn.grid(row=5,column=1,pady=2)
+        self.new.tagBtn.grid(row=7,column=1,pady=2)
 
         self.new.saveBtn = ttk.Button(self.new.fnew,text="Save",width=25,command=self.saveEdit)
-        self.new.saveBtn.grid(row=6,column=1,pady=2)
+        self.new.saveBtn.grid(row=8,column=1,pady=2)
 
         item = self.tree.selection()[0]
         item_text = self.tree.item(item,"values")
@@ -329,20 +351,26 @@ class GUI:
         self.new.photo.insert(0,item_text[3])
         self.new.mainloop()
     def saveEdit(self):
-        answer = mBox.askyesno("Add new user", "Are you want to add this user?")
+        answer = mBox.askyesno("Add new user", "Are you want to edit this user's information?")
 
         voornaam = self.new.vnaam.get()
         achternaam = self.new.anaam.get()
         tagnummer = self.new.tagnummer.get()
         image = self.new.photo.get()
         nTag = self.new.nTag.get()
+        access = self.vAccess.get()
+        state = self.vState.get()
         
         connection = pymysql.connect(**dbConfig)
         cursor = connection.cursor()
 
         if answer:
             try:
-                cursor.execute("""UPDATE Personen SET id=%s,firstname=%s,lastname=%s,photo=%s where id=%s""",(nTag,voornaam,achternaam,image,tagnummer))
+                if nTag == "":
+                    cursor.execute("""UPDATE Personen SET firstname=%s,lastname=%s,photo=%s,access=%s,state=%s where id=%s""",(voornaam,achternaam,image,access,state,tagnummer))
+                else:
+                    cursor.execute("""UPDATE Personen SET id=%s,firstname=%s,lastname=%s,photo=%s,access=%s,state=%s where id=%s""",(nTag,voornaam,achternaam,image,access,state,tagnummer))
+                print(access,state)
                 connection.commit()
             except pymysql.MySQLError as e:
                 connection.rollback()
@@ -417,11 +445,10 @@ class GUI:
 
             #query database to delete user
             try :
-                query ="DELETE FROM `test` where ID = %s"
+                query ="DELETE FROM Personen where id = %s"
                 ID = int(item_text[0])
                 response = cursor.execute(query,(ID,))
                 
-                print(int(item_text[0]))
                 if response:
                     print("User deleted")
                 else:
@@ -432,7 +459,6 @@ class GUI:
                 print("Got error {!r}, errno is {}".format(e,e.args[0]))
                 
             finally:
-                    self.tree.delete(item)
                     cursor.close()
                     connection.close()
     def readtag(self):
