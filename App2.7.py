@@ -171,6 +171,7 @@ class GUI:
         naam=""
         voornaam=""
         granted = ""
+        action = ""
         try:
             cursor.execute("Select * FROM Personen where ID = %s",(id))
             if reader == 1:
@@ -196,6 +197,25 @@ class GUI:
                     self.imgResponse = tk.PhotoImage(file="error.gif")
                     self.imgResLabel.configure(image=self.imgResponse)
                     granted = "denied."
+                if response[7] == 0:
+                    #komt binnen
+                    action = "entered"
+                    try:
+                        cursor.execute("""UPDATE Personen SET aanwezig=%d where id=%s""",(1,id))
+                        connection.commit()
+                    except pymysql.MySQLError as e:
+                        connection.rollback()
+                        print("Got error {!r}, errno is {}".format(e,e.args[0]))
+                    
+                if response[7] == 1:
+                    #gaat weg
+                    action = "left"
+                    try:
+                        cursor.execute("""UPDATE Personen SET aanwezig=%d where id=%s""",(0,id))
+                        connection.commit()
+                    except pymysql.MySQLError as e:
+                        connection.rollback()
+                        print("Got error {!r}, errno is {}".format(e,e.args[0]))
                 
                 
         except pymysql.MySQLError as e:
@@ -205,8 +225,7 @@ class GUI:
             connection.close()
             #opening logfile
             logfile = open("./log.txt", "a")
-            string = tijd
-            logfile.write(tijd + " " + voornaam + " " + naam + " entered via entry: " + str(ingang) + ", entry was " + granted + "\n")
+            logfile.write(tijd + " " + voornaam + " " + naam + action + " via entry: " + str(ingang) + ", entry was " + granted + "\n")
             logfile.close()
             
             
