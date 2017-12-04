@@ -38,6 +38,7 @@ dbConfig = {
 #global vars for monitoring
 stopMonitor = False
 reader = 1
+stopMonitorForCheck = False
 
 class GUI:
     def __init__(self, master):
@@ -140,6 +141,7 @@ class GUI:
     def checkReaders(self):
         global stopMonitor
         global reader
+        global stopMonitorForCheck
         if stopMonitor != True:
             if reader == 1:
                 spi.openSPI(device='/dev/spidev0.0',speed=1000000)
