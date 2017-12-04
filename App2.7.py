@@ -189,7 +189,8 @@ class GUI:
                 self.imgPerson = tk.PhotoImage(file=response[3])
                 self.imgLabel.configure(image=self.imgPerson)
                 self.pName.insert(tk.INSERT, response[1]+" "+response[2])
-                if id == response[0] and response[5] == ingang:
+                functiePersoon = response[4]
+                if id == response[0] and (response[5] == ingang or response[5] == 3) and response[6] == 1:
                     self.imgResponse = tk.PhotoImage(file="right.gif")
                     self.imgResLabel.configure(image=self.imgResponse)
                     granted = "approved."
@@ -225,7 +226,7 @@ class GUI:
             connection.close()
             #opening logfile
             logfile = open("./log.txt", "a")
-            logfile.write(tijd + " " + voornaam + " " + naam + action + " via entry: " + str(ingang) + ", entry was " + granted + "\n")
+            logfile.write(tijd + " " + voornaam + " " + naam + ", " + functiePersoon + ", " + action + " via entry: " + str(ingang) + ", entry was " + granted + "\n")
             logfile.close()
             
             
