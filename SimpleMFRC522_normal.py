@@ -1,4 +1,5 @@
 # Code by Simon Monk https://github.com/simonmonk/
+# Modified for this project. We thank Simon Monk for his contribution.
 
 import MFRC522
 import RPi.GPIO as GPIO
