@@ -43,7 +43,7 @@ stopMonitorForCheck = False
 class GUI:
     def __init__(self, master):
         self.master = master
-        master.title("Python GUI")
+        master.title("Aanwezigheidssyteem")
         master.config(background="lavender")
         self.initialize_UI()
     #def userLogin(self):
@@ -84,7 +84,7 @@ class GUI:
         self.tree.heading('#3', text='Firstname')
         self.tree.heading('#4', text='Photo')
         self.tree.heading('#5', text='Access')
-        self.tree.column('#1',stretch='False',minwidth=0,width=100)
+        self.tree.column('#1',stretch='False',minwidth=0,width=105)
         self.tree.column('#2',stretch='False',minwidth=0,width=100)
         self.tree.column('#3',stretch='False',minwidth=0,width=100)
         self.tree.column('#4',stretch='False',minwidth=0,width=80)
@@ -155,14 +155,14 @@ class GUI:
                 GPIO.cleanup()
                 if id == 0:
                     reader = reader*-1
-                    gui.after(2000, self.checkReaders)
+                    gui.after(400, self.checkReaders)
                 else:
                     stopMonitorForCheck = True
         now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         if stopMonitorForCheck == True:
             self.checkPerson(id, now, reader)
             stopMonitorForCheck = False
-            gui.after(2000, self.checkReaders)
+            gui.after(400, self.checkReaders)
         
     def checkPerson(self,id, tijd, reader):
         connection = pymysql.connect(**dbConfig)
@@ -176,30 +176,31 @@ class GUI:
         try:
             cursor.execute("Select * FROM Personen where ID = %s",(id))
             if reader == 1:
-                self.pEntry.delete(tk.INSERT)
+                self.pEntry.delete(1.0,'end')
                 self.pEntry.insert(tk.INSERT, "Reader 1")
                 ingang = 1
             else:
-                self.pEntry.delete(tk.INSERT)
+                self.pEntry.delete(1.0,'end')
                 self.pEntry.insert(tk.INSERT, "Reader 2")
                 ingang = 2
                 
             for response in cursor:
                 voornaam = response[1]
                 naam = response[2]
-                self.imgPerson = tk.PhotoImage(file=response[3])
+                self.imgPerson = tk.PhotoImage(file="images/"+response[3])
                 self.imgLabel.configure(image=self.imgPerson)
+                self.pName.delete(1.0,'end')
                 self.pName.insert(tk.INSERT, response[1]+" "+response[2])
                 functiePersoon = response[4]
                 if id == response[0] and (response[5] == ingang or response[5] == 3) and response[6] == 1:
-                    self.imgResponse = tk.PhotoImage(file="right.gif")
+                    self.imgResponse = tk.PhotoImage(file="images/right.gif")
                     self.imgResLabel.configure(image=self.imgResponse)
                     granted = "approved."
                 else:
-                    self.imgResponse = tk.PhotoImage(file="error.gif")
+                    self.imgResponse = tk.PhotoImage(file="images/error.gif")
                     self.imgResLabel.configure(image=self.imgResponse)
                     granted = "denied."
-                if response[7] == 0:
+                if response[7] == 0 and granted == "approved.":
                     #komt binnen
                     action = "entered"
                     try:
@@ -209,7 +210,7 @@ class GUI:
                         connection.rollback()
                         print("Got error {!r}, errno is {}".format(e,e.args[0]))
                     
-                if response[7] == 1:
+                if response[7] == 1 and granted == "approved.":
                     #gaat weg
                     action = "left"
                     try:
@@ -232,6 +233,9 @@ class GUI:
             
             
     def create_person_fields(self):
+        
+        self.vAccess = tk.IntVar()
+        self.vFunctie = tk.IntVar()
         #borderwidth = distance between border and elements
         self.frame_pinfo = ttk.Frame(self.tab1,width=200,height=300,relief="ridge",borderwidth=20)
         self.frame_pinfo.grid(row=0,column=0,padx=20,pady=20)
@@ -254,15 +258,27 @@ class GUI:
         self.tagnummer = ttk.Entry(self.frame_pinfo,width=20)
         self.tagnummer.grid(row=4,column=1,pady=2)
 
-        self.fLabel = ttk.Label(self.frame_pinfo, text="Function:",width=15).grid(row=5,column=0)
-        self.functie = ttk.Entry(self.frame_pinfo,width=20)
-        self.functie.grid(row=5,column=1,pady=2)
-
-        self.tLabel = ttk.Label(self.frame_pinfo, text="Access:",width=15).grid(row=6,column=0)
-        self.toegang = ttk.Entry(self.frame_pinfo,width=20)
-        self.toegang.grid(row=6,column=1,pady=2)
-      
+        self.functie = ttk.Frame(self.frame_pinfo)
+        self.functie.grid(row=5,column=1)
+        self.functieLb = ttk.Label(self.frame_pinfo ,text="Function:",width=15).grid(row=5,column=0) 
+        self.functieRb1 = ttk.Radiobutton(self.functie,text="Leerkracht",value=1,variable=self.vFunctie)
+        self.functieRb1.grid(row=0,column=1,padx=2)
+        self.functieRb2 = ttk.Radiobutton(self.functie ,text="Student",value=2,variable=self.vFunctie)
+        self.functieRb2.grid(row=0,column=2,padx=2)
+        self.functieRb3 = ttk.Radiobutton(self.functie ,text="Personeel",value=3,variable=self.vFunctie)
+        self.functieRb3.grid(row=0,column=3,padx=2)
         
+        self.fToegang =  ttk.Frame(self.frame_pinfo)
+        self.fToegang.grid(row=6,column=1)
+        self.accessLb = ttk.Label(self.frame_pinfo ,text="Access:",width=15).grid(row=6,column=0) 
+        self.accessRb1 = ttk.Radiobutton(self.fToegang,text="Ingang 1",value=1,variable=self.vAccess)
+        self.accessRb1.grid(row=0,column=1,padx=2)
+        self.accessRb2 = ttk.Radiobutton(self.fToegang ,text="Ingang2",value=2,variable=self.vAccess)
+        self.accessRb2.grid(row=0,column=2,padx=2)
+        self.accessRb3 = ttk.Radiobutton(self.fToegang ,text="Beide",value=3,variable=self.vAccess)
+        self.accessRb3.grid(row=0,column=3,padx=2)
+        
+      
         self.btn_read_tag = ttk.Button(self.frame_pinfo,text="Read tagnumber",width=25,command=self.readtag)
         self.btn_read_tag.grid(row=7,column=1,padx=1,pady=10)
         self.btn_addToDatabase = ttk.Button(self.frame_pinfo,text="Add to database",width=25,command=self.insertDb)
@@ -270,7 +286,7 @@ class GUI:
         
     def monitor(self):
         #image of person
-        self.imgPerson = tk.PhotoImage(file="mk.gif")
+        self.imgPerson = tk.PhotoImage(file="images/test.gif")
         self.imgLabel = ttk.Label(self.frameImg,image=self.imgPerson)
         self.imgLabel.grid(row=0,column=2,padx=10,pady=3,columnspan=2,rowspan=2)
         #name of person
@@ -284,15 +300,17 @@ class GUI:
         self.pEntry = tk.Text(self.frameEntry,width=20,height=2,highlightthickness=2, highlightbackground="#333")
         self.pEntry.grid(column=0,row=3,sticky="w")
         #image to show if entry was successful or not
-        self.imgResponse = tk.PhotoImage(file="error.gif")
+        self.imgResponse = tk.PhotoImage(file="images/error.gif")
         self.imgResLabel = ttk.Label(self.frameResponse,image=self.imgResponse)
         self.imgResLabel.grid(row=0,column=0,padx=10,pady=2)
         
     def editUser(self):
         self.new = tk.Toplevel(self.master)
+        self.new.title("Gebruikersgegevens wijzigen")
         
-        self.vAccess = tk.IntVar()
+        self.vAccessEdit = tk.IntVar()
         self.vState = tk.IntVar()
+        
         self.new.fnew = ttk.Frame(self.new,width=200,height=300,relief="ridge",borderwidth=20)
         self.new.fnew.grid(row=0,column=0,padx=20,pady=20)
 
@@ -320,19 +338,19 @@ class GUI:
         self.new.frameAccess = ttk.Frame(self.new.fnew)
         self.new.frameAccess.grid(row=5,column=1)
         self.new.accessLb = ttk.Label(self.new.fnew ,text="Access:",width=15).grid(row=5,column=0) 
-        self.new.accessRb1 = ttk.Radiobutton(self.new.frameAccess,text="Ingang 1",value=1,variable=self.vAccess)
+        self.new.accessRb1 = ttk.Radiobutton(self.new.frameAccess,text="Ingang 1",value=1,variable=self.vAccessEdit)
         self.new.accessRb1.grid(row=0,column=1,padx=2)
-        self.new.accessRb2 = ttk.Radiobutton( self.new.frameAccess ,text="Ingang2",value=2,variable=self.vAccess)
+        self.new.accessRb2 = ttk.Radiobutton( self.new.frameAccess ,text="Ingang2",value=2,variable=self.vAccessEdit)
         self.new.accessRb2.grid(row=0,column=2,padx=2)
-        self.new.accessRb3 = ttk.Radiobutton( self.new.frameAccess ,text="Beide",value=3,variable=self.vAccess)
+        self.new.accessRb3 = ttk.Radiobutton( self.new.frameAccess ,text="Beide",value=3,variable=self.vAccessEdit)
         self.new.accessRb3.grid(row=0,column=3,padx=2)
 
         self.new.frameState = ttk.Frame(self.new.fnew)
         self.new.frameState.grid(row=6,column=1)
         self.new.stateLb = ttk.Label(self.new.fnew ,text="State:",width=15).grid(row=6,column=0) 
-        self.new.stateRb1 = ttk.Radiobutton(self.new.frameState,text="On",value=0,variable=self.vState)
+        self.new.stateRb1 = ttk.Radiobutton(self.new.frameState,text="On",value=1,variable=self.vState)
         self.new.stateRb1.grid(row=0,column=1,padx=7)
-        self.new.stateRb2 = ttk.Radiobutton( self.new.frameState ,text="Off",value=1,variable=self.vState)
+        self.new.stateRb2 = ttk.Radiobutton( self.new.frameState ,text="Off",value=0,variable=self.vState)
         self.new.stateRb2.grid(row=0,column=2,padx=7)
         
         
@@ -346,8 +364,8 @@ class GUI:
         item_text = self.tree.item(item,"values")
 
         self.new.tagnummer.insert(0,item_text[0])
-        self.new.vnaam.insert(0,item_text[1])
-        self.new.anaam.insert(0,item_text[2])
+        self.new.vnaam.insert(0,item_text[2])
+        self.new.anaam.insert(0,item_text[1])
         self.new.photo.insert(0,item_text[3])
         self.new.mainloop()
     def saveEdit(self):
@@ -358,7 +376,7 @@ class GUI:
         tagnummer = self.new.tagnummer.get()
         image = self.new.photo.get()
         nTag = self.new.nTag.get()
-        access = self.vAccess.get()
+        access = self.vAccessEdit.get()
         state = self.vState.get()
         
         connection = pymysql.connect(**dbConfig)
@@ -390,7 +408,7 @@ class GUI:
         try:
             cursor.execute("Select * FROM Personen")
             for response in cursor:
-                self.tree.insert('','end',values=(response[0],response[2],response[1],response[3],response[6]))
+                self.tree.insert('','end',values=(response[0],response[2],response[1],response[3],response[5]))
                 
         except pymysql.MySQLError as e:
             print("Got error {!r}, errno is {}".format(e,e.args[0]))
@@ -407,15 +425,15 @@ class GUI:
             achternaam = self.anaam.get()
             tagnummer = self.tagnummer.get()
             image = self.image.get()
-            functie = self.functie.get()
-            toegang = self.toegang.get()
+            functie = self.vFunctie.get()
+            toegang = self.vAccess.get()
             
             connection = pymysql.connect(**dbConfig)
             cursor = connection.cursor()
                 
             try:
                 query = """INSERT INTO Personen (id,firstname,lastname,photo,functionType,access,state) VALUES(%s,%s,%s,%s,%s,%s,%s)"""
-                cursor.execute(query,(tagnummer,voornaam,achternaam,image,functie,toegang,1))
+                cursor.execute(query,(tagnummer,voornaam,achternaam,image,functie,toegang,"1"))
                 connection.commit()
             except pymysql.MySQLError as e:
                 connection.rollback()
@@ -429,8 +447,6 @@ class GUI:
                 self.anaam.delete(0,'end')
                 self.tagnummer.delete(0,'end')
                 self.image.delete(0,'end')
-                self.functie.delete(0,'end')
-                self.toegang.delete(0,'end')
                 
 
             
