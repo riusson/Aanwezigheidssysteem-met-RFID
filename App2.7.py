@@ -132,6 +132,7 @@ class GUI:
     def startMonitor(self):
         global stopMonitor
         stopMonitor = False
+        GPIO.cleanup()
         self.checkReaders()
         
     def stopMonitor(self):
